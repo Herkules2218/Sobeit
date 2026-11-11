@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -87,3 +87,23 @@ jobs:
           name: olympus-win32-d3d9
           path: output/d3d9.dll
           if-no-files-found: error
+
+      - name: Publish direct download d3d9.dll
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!(Test-Path "output/d3d9.dll")) { throw "Compiled DLL missing" }
+          Copy-Item "output/d3d9.dll" "d3d9.dll" -Force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "d3d9.dll"
+          $pending = @(git status --porcelain -- "d3d9.dll")
+          if ($pending.Count -eq 0) {
+            Write-Host "Direct DLL already up to date"
+          } else {
+            git commit -m "Publish compiled Olympus d3d9.dll"
+            if ($LASTEXITCODE -ne 0) { throw "Commit failed" }
+            git push origin HEAD:main
+            if ($LASTEXITCODE -ne 0) { throw "Push failed" }
+          }
+          Write-Host "Direct download: https://raw.githubusercontent.com/Herkules2218/Sobeit/main/d3d9.dll"
