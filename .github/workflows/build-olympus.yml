@@ -25,6 +25,13 @@ jobs:
           Expand-Archive "Olympus_Menu_3_0_Full_Source.zip" "_olympus" -Force
           if (!(Test-Path "_olympus/BlackLight/src/mod_sa_VS2015.vcxproj")) { throw "Expected Visual Studio project was not found" }
 
+      - name: Apply Olympus Royal UI hotfix
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python "tools/patch_olympus_ui.py"
+          if ($LASTEXITCODE -ne 0) { throw "Olympus hotfix failed" }
+
       - name: Adapt legacy sparsehash for MSVC 2022
         shell: pwsh
         run: |
