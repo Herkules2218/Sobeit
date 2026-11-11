@@ -30,109 +30,13 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $config = "_olympus/BlackLight/src/sparsehash/windows/google/sparsehash/sparseconfig.h"
-          if (!(Test-Path $config)) { throw "Missing sparsehash configuration header" }
+          if (!(Test-Path $config)) { throw "Missing sparsehash config" }
           $old = Get-Content -LiteralPath $config -Raw
-          $new = $old -replace '(?m)^#define\s+HASH_NAMESPACE\s+stdext\s*        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          nuget install Microsoft.DXSDK.D3DX -Version 9.29.952.8 -OutputDirectory "_deps" -NonInteractive
-          if ($LASTEXITCODE -ne 0) { throw "Failed to restore DirectX SDK package" }
-          $p = Get-ChildItem "_deps" -Directory -Filter "Microsoft.DXSDK.D3DX.*" | Select-Object -First 1
-          if (!$p) { throw "DirectX SDK NuGet package missing" }
-          $h = Get-ChildItem $p.FullName -Recurse -File -Filter "d3dx9.h" | Select-Object -First 1
-          $l = Get-ChildItem $p.FullName -Recurse -File -Filter "d3dx9.lib" | Where-Object { $_.FullName -match '(x86|Win32)' } | Select-Object -First 1
-          if (!$h -or !$l) { throw "DirectX SDK x86 headers or libs not found" }
-          $dxsdk = Join-Path $env:GITHUB_WORKSPACE "_dxsdk"
-          New-Item -Type Directory -Force (Join-Path $dxsdk "Include") | Out-Null
-          New-Item -Type Directory -Force (Join-Path $dxsdk "Lib/x86") | Out-Null
-          Copy-Item (Join-Path $h.DirectoryName '*') (Join-Path $dxsdk "Include") -Force
-          Copy-Item (Join-Path $l.DirectoryName '*') (Join-Path $dxsdk "Lib/x86") -Force
-          "DXSDK_DIR=$dxsdk/" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "DXSDK include: $($h.DirectoryName)"
-          Write-Host "DXSDK library: $($l.DirectoryName)"
-
-      - name: Compile Olympus Release Win32
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio/Installer/vswhere.exe"
-          $msbuild = & $vswhere -latest -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild/**/Bin/MSBuild.exe" | Select-Object -First 1
-          if (!$msbuild) { throw "MSBuild is not available" }
-          $project = (Resolve-Path "_olympus/BlackLight/src/mod_sa_VS2015.vcxproj").Path
-          $dir = (Split-Path $project -Parent) + "\"
-          & $msbuild $project /m /t:Rebuild /p:Configuration=Release /p:Platform=Win32 "/p:SolutionDir=$dir" /v:minimal
-          if ($LASTEXITCODE -ne 0) { throw "Compile failed; inspect MSBuild errors above" }
-
-      - name: Package actual compiled DLL
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $dll = Get-ChildItem "_olympus" -File -Recurse -Filter "d3d9.dll" |
-            Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
-          if (!$dll) { throw "No d3d9.dll generated" }
-          New-Item -ItemType Directory -Force "output" | Out-Null
-          Copy-Item $dll.FullName "output/d3d9.dll"
-          Write-Host "Output: $($dll.FullName), size: $($dll.Length) bytes"
-
-      - name: Upload DLL artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: olympus-win32-d3d9
-          path: output/d3d9.dll
-          if-no-files-found: error
-, '#define HASH_NAMESPACE std'
-          $new = $new -replace '(?m)^#define\s+SPARSEHASH_HASH\s+HASH_NAMESPACE::hash_compare\s*        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          nuget install Microsoft.DXSDK.D3DX -Version 9.29.952.8 -OutputDirectory "_deps" -NonInteractive
-          if ($LASTEXITCODE -ne 0) { throw "Failed to restore DirectX SDK package" }
-          $p = Get-ChildItem "_deps" -Directory -Filter "Microsoft.DXSDK.D3DX.*" | Select-Object -First 1
-          if (!$p) { throw "DirectX SDK NuGet package missing" }
-          $h = Get-ChildItem $p.FullName -Recurse -File -Filter "d3dx9.h" | Select-Object -First 1
-          $l = Get-ChildItem $p.FullName -Recurse -File -Filter "d3dx9.lib" | Where-Object { $_.FullName -match '(x86|Win32)' } | Select-Object -First 1
-          if (!$h -or !$l) { throw "DirectX SDK x86 headers or libs not found" }
-          $dxsdk = Join-Path $env:GITHUB_WORKSPACE "_dxsdk"
-          New-Item -Type Directory -Force (Join-Path $dxsdk "Include") | Out-Null
-          New-Item -Type Directory -Force (Join-Path $dxsdk "Lib/x86") | Out-Null
-          Copy-Item (Join-Path $h.DirectoryName '*') (Join-Path $dxsdk "Include") -Force
-          Copy-Item (Join-Path $l.DirectoryName '*') (Join-Path $dxsdk "Lib/x86") -Force
-          "DXSDK_DIR=$dxsdk/" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "DXSDK include: $($h.DirectoryName)"
-          Write-Host "DXSDK library: $($l.DirectoryName)"
-
-      - name: Compile Olympus Release Win32
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio/Installer/vswhere.exe"
-          $msbuild = & $vswhere -latest -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild/**/Bin/MSBuild.exe" | Select-Object -First 1
-          if (!$msbuild) { throw "MSBuild is not available" }
-          $project = (Resolve-Path "_olympus/BlackLight/src/mod_sa_VS2015.vcxproj").Path
-          $dir = (Split-Path $project -Parent) + "\"
-          & $msbuild $project /m /t:Rebuild /p:Configuration=Release /p:Platform=Win32 "/p:SolutionDir=$dir" /v:minimal
-          if ($LASTEXITCODE -ne 0) { throw "Compile failed; inspect MSBuild errors above" }
-
-      - name: Package actual compiled DLL
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $dll = Get-ChildItem "_olympus" -File -Recurse -Filter "d3d9.dll" |
-            Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
-          if (!$dll) { throw "No d3d9.dll generated" }
-          New-Item -ItemType Directory -Force "output" | Out-Null
-          Copy-Item $dll.FullName "output/d3d9.dll"
-          Write-Host "Output: $($dll.FullName), size: $($dll.Length) bytes"
-
-      - name: Upload DLL artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: olympus-win32-d3d9
-          path: output/d3d9.dll
-          if-no-files-found: error
-, '#define SPARSEHASH_HASH HASH_NAMESPACE::hash'
-          if ($new -eq $old -or $new -match 'hash_compare') { throw "Legacy sparsehash compatibility patch did not apply" }
+          $new = $old -replace '(?m)^#define\s+HASH_NAMESPACE\s+stdext\s*$', '#define HASH_NAMESPACE std'
+          $new = $new -replace '(?m)^#define\s+SPARSEHASH_HASH\s+HASH_NAMESPACE::hash_compare\s*$', '#define SPARSEHASH_HASH HASH_NAMESPACE::hash'
+          if ($new -eq $old -or $new -match 'hash_compare') { throw "sparsehash patch failed" }
           Set-Content -LiteralPath $config -Value $new -Encoding UTF8
-          Write-Host "Applied std::hash compatibility patch"
+          Write-Host "Legacy hash compatibility applied"
 
       - name: Restore legacy DirectX 9 headers and x86 libraries
         shell: pwsh
