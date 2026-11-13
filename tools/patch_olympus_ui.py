@@ -36,7 +36,14 @@ if count < 3:
     raise SystemExit('Object labels not found; unexpected source')
 m = m.replace('Об’єкт', 'Обєкт').replace('об’єкт', 'обєкт')
 assert 'Об’єкт' not in m and 'об’єкт' not in m
-menu.write_text(m, encoding='utf-8')
+# Critical: original BlackLightMenu.cpp has a UTF-8 BOM. MSVC can misread
+# Ukrainian menu literals as the active Windows code page if BOM is lost.
+# utf-8-sig restores the marker and keeps all Ukrainian strings readable.
+menu.write_text(m, encoding='utf-8-sig')
+if not menu.read_bytes().startswith(b'\xef\xbb\xbf'):
+    raise SystemExit('Menu UTF-8 BOM was not preserved')
+if 'Гравець'.encode('utf-8') not in menu.read_bytes():
+    raise SystemExit('Ukrainian menu text was corrupted')
 
 c = chat.read_text(encoding='utf-8-sig')
 autoplay = '\tpSampMulti->PlaySongOnLoading(pSampMulti->SetText("%sSongOnStart.txt",M0D_FOLDER));'
