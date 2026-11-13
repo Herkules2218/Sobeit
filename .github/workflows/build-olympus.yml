@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - "Olympus_Menu_3_0_Full_Source.zip"
+      - "tools/patch_olympus_ui.py"
       - ".github/workflows/build-olympus.yml"
   workflow_dispatch:
 
