@@ -4,6 +4,7 @@ on:
     paths:
       - "Olympus_Menu_3_0_Full_Source.zip"
       - "tools/patch_olympus_ui.py"
+      - "tools/patch_olympus_player.py"
       - ".github/workflows/build-olympus.yml"
   workflow_dispatch:
 
@@ -32,6 +33,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python "tools/patch_olympus_ui.py"
           if ($LASTEXITCODE -ne 0) { throw "Olympus hotfix failed" }
+
+      - name: Apply Olympus player menu cleanup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python "tools/patch_olympus_player.py"
+          if ($LASTEXITCODE -ne 0) { throw "Player menu patch failed" }
 
       - name: Adapt legacy sparsehash for MSVC 2022
         shell: pwsh
