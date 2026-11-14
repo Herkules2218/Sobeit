@@ -12,7 +12,7 @@ def replace_one(path, old, new):
     a = old.encode("utf-8") if isinstance(old, str) else old
     b = new.encode("utf-8") if isinstance(new, str) else new
     if data.count(a) != 1:
-        raise SystemExit(f"Unexpected {path.name} anchor count: {data.count(a)}")
+        raise SystemExit(f"Unexpected {path.name} anchor count: {data.count(a)}, anchor={a[:100]!r}; has boost={b'VehicleFunc13' in data}; has pragma={b'execution_character_set' in data}; sample={data[data.find(b'VehicleFunc13')-120:data.find(b'VehicleFunc13')+190]!r}")
     path.write_bytes(data.replace(a, b, 1))
 
 globals_ = """
