@@ -6,6 +6,7 @@ on:
       - "tools/patch_olympus_ui.py"
       - "tools/patch_olympus_player.py"
       - "tools/patch_olympus_hud_autostart.py"
+      - "tools/patch_olympus_boost_modes.py"
       - ".github/workflows/build-olympus.yml"
   workflow_dispatch:
 
@@ -48,6 +49,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python "tools/patch_olympus_hud_autostart.py"
           if ($LASTEXITCODE -ne 0) { throw "HUD startup patch failed" }
+
+      - name: Apply vehicle boost modes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python "tools/patch_olympus_boost_modes.py"
+          if ($LASTEXITCODE -ne 0) { throw "Vehicle boost mode patch failed" }
 
       - name: Adapt legacy sparsehash for MSVC 2022
         shell: pwsh
