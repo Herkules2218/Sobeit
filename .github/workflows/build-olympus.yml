@@ -5,6 +5,7 @@ on:
       - "Olympus_Menu_3_0_Full_Source.zip"
       - "tools/patch_olympus_ui.py"
       - "tools/patch_olympus_player.py"
+      - "tools/patch_olympus_hud_autostart.py"
       - ".github/workflows/build-olympus.yml"
   workflow_dispatch:
 
@@ -40,6 +41,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python "tools/patch_olympus_player.py"
           if ($LASTEXITCODE -ne 0) { throw "Player menu patch failed" }
+
+      - name: Restore bottom HUD startup setting
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python "tools/patch_olympus_hud_autostart.py"
+          if ($LASTEXITCODE -ne 0) { throw "HUD startup patch failed" }
 
       - name: Adapt legacy sparsehash for MSVC 2022
         shell: pwsh
